@@ -1,7 +1,7 @@
 import { chromium } from "playwright";
 import nodemailer from "nodemailer";
 
-const URL = "https://reserve.tokyodisneyresort.jp/restaurant/search/?useDate=20260628&mealDivList%5B1%5D=2&adultNum=2&childNum=1&childAgeInform=08%7C&restaurantType%5B4%5D=1&nameCd=RCHM0&wheelchairCount=0&stretcherCount=0&keyword=&reservationStatus=1";
+const URL = "https://reserve.tokyodisneyresort.jp/restaurant/search/";
 
 async function check() {
   // GitHub Actions向けに headless + no-sandbox
