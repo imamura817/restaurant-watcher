@@ -4,10 +4,10 @@ import nodemailer from "nodemailer";
 const URL =
 "https://reserve.tokyodisneyresort.jp/restaurant/search/";
 
-async function sendMail() {
+async function sendMail(){
 
  const transporter =
-  nodemailer.createTransport({
+ nodemailer.createTransport({
 
    service:"gmail",
 
@@ -24,16 +24,9 @@ async function sendMail() {
 
    to:process.env.GMAIL_USER,
 
-   subject:"【シェフ・ミッキー】空き発見",
+   subject:"【シェフミッキー】空き発見",
 
-   text:
-`シェフ・ミッキーに空きが出ました
-
-日付:2026/06/28
-人数:大人2 子供1(8歳)
-時間帯:昼食
-
-すぐ確認してください`
+   text:"シェフミッキー昼食に空きあり"
 
  });
 
@@ -57,77 +50,46 @@ async function check(){
 
  try{
 
-   console.log("open");
+   console.log("opening");
 
    await page.goto(
-     URL,
-     {
-      waitUntil:"networkidle",
-      timeout:60000
-     }
+    URL,
+    {
+      waitUntil:"domcontentloaded",
+      timeout:120000
+    }
    );
 
-   console.log("goto success");
-
-   console.log(
-    "title:",
-    await page.title()
-   );
-
-   console.log(
-    "current url:",
-    page.url()
-   );
+   console.log("opened");
 
    await page.waitForTimeout(
-     3000
+    5000
    );
-
-   // 日付
 
    await page.fill(
-     'input[name="useDate"]',
-     "2026/06/28"
-   );
-
-   // 人数
-
-   await page.selectOption(
-     'select[name="adultNum"]',
-     "2"
+    'input[name="useDate"]',
+    "2026/06/28"
    );
 
    await page.selectOption(
-     'select[name="childNum"]',
-     "1"
+    'select[name="adultNum"]',
+    "2"
    );
 
    await page.selectOption(
-     'select[name="childAgeInform"]',
-     "08"
+    'select[name="childNum"]',
+    "1"
    );
 
-   // 朝食 OFF
-
-   await page
-   .getByLabel("朝食")
-   .uncheck()
-   .catch(()=>{});
-
-   // 夕食 OFF
-
-   await page
-   .getByLabel("夕食")
-   .uncheck()
-   .catch(()=>{});
-
-   // 昼食 ON
+   await page.selectOption(
+    'select[name="childAgeInform"]',
+    "08"
+   );
 
    await page
    .getByLabel("昼食")
-   .check();
-
-   // レストラン
+   .check()
+   .catch(()=>{});
 
    await page.selectOption(
     'select',
@@ -136,33 +98,18 @@ async function check(){
     }
    );
 
-   console.log(
-    "search click"
-   );
-
    await page
    .getByText("検索する")
    .click();
 
-   console.log(
-    "after click url:",
-    page.url()
-   );
-
-   await page.waitForLoadState(
-     "networkidle"
-   );
-
    await page.waitForTimeout(
-     3000
+    10000
    );
 
    const reserveCount =
-   await page
-   .locator(
-     "text=予約する"
-   )
-   .count();
+   await page.locator(
+    "text=予約する"
+   ).count();
 
    console.log(
     "reserve count:",
@@ -173,25 +120,15 @@ async function check(){
     reserveCount>0
    ){
 
-     console.log(
-      "available!"
-     );
-
      await sendMail();
-
-   }else{
-
-     console.log(
-      "not available"
-     );
 
    }
 
- }catch(err){
+ }catch(e){
 
-   console.error(
-    "error:",
-    err
+   console.log(
+    "ERROR:",
+    e.message
    );
 
  }finally{
