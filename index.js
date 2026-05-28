@@ -24,9 +24,16 @@ async function sendMail(){
 
    to:process.env.GMAIL_USER,
 
-   subject:"【シェフミッキー】空き発見",
+   subject:"【シェフ・ミッキー】空き発見",
 
-   text:"シェフミッキー昼食に空きあり"
+   text:
+`シェフ・ミッキーに空きが出ました
+
+日付:2026/06/28
+人数:大人2 子供1(8歳)
+時間帯:昼食
+
+至急確認してください`
 
  });
 
@@ -41,12 +48,22 @@ async function check(){
 
    headless:true,
 
-   args:["--no-sandbox"]
+   args:[
+    "--no-sandbox",
+    "--disable-dev-shm-usage"
+   ]
 
  });
 
  const page =
- await browser.newPage();
+ await browser.newPage({
+
+   viewport:{
+    width:1366,
+    height:768
+   }
+
+ });
 
  try{
 
@@ -55,21 +72,30 @@ async function check(){
    await page.goto(
     URL,
     {
-      waitUntil:"domcontentloaded",
-      timeout:120000
+      waitUntil:"commit",
+      timeout:180000
     }
    );
 
    console.log("opened");
 
    await page.waitForTimeout(
-    5000
+    10000
    );
+
+   console.log(
+    "title:",
+    await page.title()
+   );
+
+   // 日付
 
    await page.fill(
     'input[name="useDate"]',
     "2026/06/28"
    );
+
+   // 人数
 
    await page.selectOption(
     'select[name="adultNum"]',
@@ -86,10 +112,14 @@ async function check(){
     "08"
    );
 
+   // 昼食
+
    await page
    .getByLabel("昼食")
    .check()
    .catch(()=>{});
+
+   // レストラン
 
    await page.selectOption(
     'select',
@@ -98,12 +128,18 @@ async function check(){
     }
    );
 
+   console.log(
+    "search click"
+   );
+
    await page
-   .getByText("検索する")
+   .getByText(
+    "検索する"
+   )
    .click();
 
    await page.waitForTimeout(
-    10000
+    15000
    );
 
    const reserveCount =
@@ -120,16 +156,28 @@ async function check(){
     reserveCount>0
    ){
 
+     console.log(
+      "available"
+     );
+
      await sendMail();
+
+   }else{
+
+     console.log(
+      "not available"
+     );
 
    }
 
  }catch(e){
 
-   console.log(
+   console.error(
     "ERROR:",
     e.message
    );
+
+   process.exit(1);
 
  }finally{
 
