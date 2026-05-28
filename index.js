@@ -4,35 +4,63 @@ import nodemailer from "nodemailer";
 const URL = "https://reserve.tokyodisneyresort.jp/restaurant/search/";
 
 async function check() {
-  const browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] });
+  const browser = await chromium.launch({
+    headless: true,
+    args: ["--no-sandbox"]
+  });
+
   const page = await browser.newPage();
 
   try {
     await page.goto(URL, { waitUntil: "networkidle", timeout: 60000 });
 
-    // 1. 日付選択
-    await page.click('selector-for-2026-06-28'); // ← 実際のカレンダーのボタンセレクタに置き換える
+    // 少し待ってUI安定
+    await page.waitForTimeout(3000);
 
-    // 2. 人数選択（3人）
-    await page.selectOption('selector-for-number-of-people', '3'); // ← ドロップダウンのセレクタ
+    // =========================
+    // ① 日付（6/28）
+    // =========================
+    await page.click('text=日付');
+    await page.click('text=28'); // 6月28日想定
 
-    // 3. 昼食/時間帯選択
-    await page.click('selector-for-lunch'); // ← ランチのラジオボタンなど
+    // =========================
+    // ② 人数（3人）
+    // =========================
+    await page.click('text=人数');
+    await page.click('text=3');
 
-    // ページ更新待ち
-    await page.waitForTimeout(2000); // 2秒待つ
+    // =========================
+    // ③ ランチ
+    // =========================
+    await page.click('text=ランチ');
+
+    // =========================
+    // ④ レストラン選択
+    // =========================
+    await page.click('text=レストランを選ぶ');
+
+    // シェフ・ミッキー選択
+    await page.waitForTimeout(2000);
+    await page.click('text=シェフ・ミッキー');
+
+    // =========================
+    // ⑤ 検索結果待ち
+    // =========================
+    await page.waitForTimeout(5000);
 
     const content = await page.content();
+
     console.log("チェック完了");
 
     if (content.includes("予約する")) {
-      console.log("空きあり！メール送信します");
+      console.log("空きあり！メール送信");
       await sendMail();
     } else {
       console.log("空きなし");
     }
+
   } catch (err) {
-    console.error("ページ操作中にエラー:", err);
+    console.error("エラー:", err);
   } finally {
     await browser.close();
   }
@@ -50,8 +78,8 @@ async function sendMail() {
   await transporter.sendMail({
     from: process.env.GMAIL_USER,
     to: process.env.GMAIL_USER,
-    subject: "【シェフ・ミッキー】空き発見",
-    text: "予約ページを確認してください\n" + URL
+    subject: "【シェフ・ミッキー】6/28空き発見",
+    text: "6月28日・3名・ランチに空きが出ました"
   });
 
   console.log("メール送信完了");
