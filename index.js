@@ -4,16 +4,25 @@ import nodemailer from "nodemailer";
 const URL = "https://reserve.tokyodisneyresort.jp/restaurant/search/";
 
 async function check() {
-  // GitHub Actions向けに headless + no-sandbox
   const browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] });
   const page = await browser.newPage();
 
   try {
-    // 60秒タイムアウト & networkidleで読み込み完了を待つ
     await page.goto(URL, { waitUntil: "networkidle", timeout: 60000 });
 
-    const content = await page.content();
+    // 1. 日付選択
+    await page.click('selector-for-2026-06-28'); // ← 実際のカレンダーのボタンセレクタに置き換える
 
+    // 2. 人数選択（3人）
+    await page.selectOption('selector-for-number-of-people', '3'); // ← ドロップダウンのセレクタ
+
+    // 3. 昼食/時間帯選択
+    await page.click('selector-for-lunch'); // ← ランチのラジオボタンなど
+
+    // ページ更新待ち
+    await page.waitForTimeout(2000); // 2秒待つ
+
+    const content = await page.content();
     console.log("チェック完了");
 
     if (content.includes("予約する")) {
@@ -23,7 +32,7 @@ async function check() {
       console.log("空きなし");
     }
   } catch (err) {
-    console.error("ページ読み込み中にエラーが発生:", err);
+    console.error("ページ操作中にエラー:", err);
   } finally {
     await browser.close();
   }
@@ -40,7 +49,7 @@ async function sendMail() {
 
   await transporter.sendMail({
     from: process.env.GMAIL_USER,
-    to: process.env.GMAIL_USER, // 自分宛てに送信
+    to: process.env.GMAIL_USER,
     subject: "【シェフ・ミッキー】空き発見",
     text: "予約ページを確認してください\n" + URL
   });
@@ -48,5 +57,4 @@ async function sendMail() {
   console.log("メール送信完了");
 }
 
-// 実行
 check();
