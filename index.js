@@ -29,7 +29,7 @@ async function sendMail() {
    text:
 `シェフ・ミッキーに空きが出ました
 
-日付:2026/05/29
+日付:2026/06/28
 人数:大人2 子供1(8歳)
 時間帯:昼食
 
@@ -67,6 +67,18 @@ async function check(){
      }
    );
 
+   console.log("goto success");
+
+   console.log(
+    "title:",
+    await page.title()
+   );
+
+   console.log(
+    "current url:",
+    page.url()
+   );
+
    await page.waitForTimeout(
      3000
    );
@@ -95,19 +107,21 @@ async function check(){
      "08"
    );
 
-   // 朝食/夕食OFF
+   // 朝食 OFF
 
    await page
    .getByLabel("朝食")
    .uncheck()
    .catch(()=>{});
 
+   // 夕食 OFF
+
    await page
    .getByLabel("夕食")
    .uncheck()
    .catch(()=>{});
 
-   // 昼食ON
+   // 昼食 ON
 
    await page
    .getByLabel("昼食")
@@ -122,11 +136,18 @@ async function check(){
     }
    );
 
-   // 検索
+   console.log(
+    "search click"
+   );
 
    await page
    .getByText("検索する")
    .click();
+
+   console.log(
+    "after click url:",
+    page.url()
+   );
 
    await page.waitForLoadState(
      "networkidle"
@@ -144,7 +165,7 @@ async function check(){
    .count();
 
    console.log(
-    "reserve count",
+    "reserve count:",
     reserveCount
    );
 
@@ -168,7 +189,10 @@ async function check(){
 
  }catch(err){
 
-   console.error(err);
+   console.error(
+    "error:",
+    err
+   );
 
  }finally{
 
