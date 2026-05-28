@@ -1,23 +1,32 @@
 import { chromium } from "playwright";
 import nodemailer from "nodemailer";
 
-const URL = "https://reserve.tokyodisneyresort.jp/restaurant/search/";
+const URL = "https://reserve.tokyodisneyresort.jp/restaurant/search/?useDate=20260628&mealDivList%5B1%5D=2&adultNum=2&childNum=1&childAgeInform=08%7C&restaurantType%5B4%5D=1&nameCd=RCHM0&wheelchairCount=0&stretcherCount=0&keyword=&reservationStatus=1";
 
 async function check() {
-  const browser = await chromium.launch();
+  // GitHub Actions向けに headless + no-sandbox
+  const browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] });
   const page = await browser.newPage();
 
-  await page.goto(URL, { waitUntil: "domcontentloaded" });
+  try {
+    // 60秒タイムアウト & networkidleで読み込み完了を待つ
+    await page.goto(URL, { waitUntil: "networkidle", timeout: 60000 });
 
-  const content = await page.content();
+    const content = await page.content();
 
-  console.log("チェック完了");
+    console.log("チェック完了");
 
-  if (content.includes("予約する")) {
-    await sendMail();
+    if (content.includes("予約する")) {
+      console.log("空きあり！メール送信します");
+      await sendMail();
+    } else {
+      console.log("空きなし");
+    }
+  } catch (err) {
+    console.error("ページ読み込み中にエラーが発生:", err);
+  } finally {
+    await browser.close();
   }
-
-  await browser.close();
 }
 
 async function sendMail() {
@@ -31,10 +40,13 @@ async function sendMail() {
 
   await transporter.sendMail({
     from: process.env.GMAIL_USER,
-    to: process.env.GMAIL_USER,
+    to: process.env.GMAIL_USER, // 自分宛てに送信
     subject: "【シェフ・ミッキー】空き発見",
     text: "予約ページを確認してください\n" + URL
   });
+
+  console.log("メール送信完了");
 }
 
+// 実行
 check();
